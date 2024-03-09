@@ -1,13 +1,18 @@
+import os
+from dotenv import load_dotenv
 import time
 import requests
 import json
 from nacl.signing import SigningKey
 import base64
 
-# Replace these with your actual Orderly key, Orderly secret, and account ID
-ORDERLY_KEY = "YOUR_ORDERLY_KEY"
-ORDERLY_SECRET = "YOUR_ORDERLY_SECRET"
-ACCOUNT_ID = "YOUR_ACCOUNT_ID"
+# Load environment variables from .env file
+load_dotenv()
+
+# Get these from your .env file
+ORDERLY_KEY = os.getenv("ORDERLY_KEY")
+ORDERLY_SECRET = os.getenv("ORDERLY_SECRET")
+ACCOUNT_ID = os.getenv("ACCOUNT_ID")
 
 # Base URL for the Orderly API
 BASE_URL = "https://api-evm.orderly.org"
@@ -46,7 +51,7 @@ def get_market_price(symbol):
     return market_price
 
 # Function to create an order
-def create_order(symbol, size):
+def create_order(symbol, size, side):
     market_price = get_market_price(symbol)
     # Adjust the price to ensure the bot is a maker
     maker_price = market_price - 0.01
@@ -55,25 +60,21 @@ def create_order(symbol, size):
         "order_type": "LIMIT",
         "order_price": maker_price,
         "order_quantity": size,
-        "side": "BUY"
+        "side": side
     }
     return send_request("post", "/v1/order", data)
-
-# Function to cancel an order
-def cancel_order(order_id):
-    return send_request("delete", f"/v1/order/{order_id}")
 
 # Main function
 def main():
     symbol = input("Enter the pair you want to trade: ")
     size = float(input("Enter the trade size in USDC: "))
     while True:
-        # Create an order
-        order = create_order(symbol, size)
-        print(f"Created order: {order}")
-        # Immediately cancel the order
-        result = cancel_order(order["order_id"])
-        print(f"Cancelled order: {result}")
+        # Create a BUY order
+        order = create_order(symbol, size, "BUY")
+        print(f"Created BUY order: {order}")
+        # Create a SELL order of the same size to close the position
+        close_order = create_order(symbol, size, "SELL")
+        print(f"Created SELL order to close position: {close_order}")
         # Wait 5 seconds before opening another one
         time.sleep(5)
 
