@@ -1,0 +1,3 @@
+requests
+pynacl
+python-dotenv
